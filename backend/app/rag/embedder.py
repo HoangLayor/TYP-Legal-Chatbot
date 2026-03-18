@@ -114,5 +114,7 @@ def get_embedder() -> Embedder:
     global _embedder
     if _embedder is None:
         _embedder = Embedder()
-        logger.info("embedder_initialized", model=_embedder.model, dim=_embedder.dimension)
+        logger.info(
+            "embedder_initialized", model=_embedder.model, dim=_embedder.dimension
+        )
     return _embedder

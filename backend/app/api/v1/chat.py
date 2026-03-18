@@ -29,7 +29,9 @@ def get_pipeline() -> RAGPipeline:
     return RAGPipeline()
 
 
-async def _event_stream(pipeline: RAGPipeline, request: ChatRequest) -> AsyncIterator[str]:
+async def _event_stream(
+    pipeline: RAGPipeline, request: ChatRequest
+) -> AsyncIterator[str]:
     """Generator cho SSE response stream.
 
     Yield từng event dưới dạng ``data: <json>\\n\\n`` (SSE format).

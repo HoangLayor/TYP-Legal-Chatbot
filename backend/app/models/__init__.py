@@ -14,12 +14,17 @@ from pydantic import BaseModel, Field, field_validator
 
 # ── Chat ─────────────────────────────────────────────────────────────────────
 
+
 class ChatRequest(BaseModel):
     """Request body cho POST /api/v1/chat/stream."""
 
     session_id: str = Field(..., description="UUID v4 của session hội thoại")
-    query: str = Field(..., min_length=1, max_length=2000, description="Câu hỏi của user")
-    use_web_search: bool = Field(True, description="Cho phép fallback sang Tavily web search")
+    query: str = Field(
+        ..., min_length=1, max_length=2000, description="Câu hỏi của user"
+    )
+    use_web_search: bool = Field(
+        True, description="Cho phép fallback sang Tavily web search"
+    )
 
     @field_validator("query")
     @classmethod
@@ -47,6 +52,7 @@ class SourceItem(BaseModel):
 
 # ── Ingest ────────────────────────────────────────────────────────────────────
 
+
 class IngestResponse(BaseModel):
     """Response body cho POST /api/v1/ingest."""
 
@@ -58,6 +64,7 @@ class IngestResponse(BaseModel):
 
 
 # ── History ───────────────────────────────────────────────────────────────────
+
 
 class MessageSchema(BaseModel):
     """Schema một message trong history."""
@@ -85,6 +92,7 @@ class DeleteHistoryResponse(BaseModel):
 
 
 # ── Search (debug) ────────────────────────────────────────────────────────────
+
 
 class SearchHit(BaseModel):
     """Một kết quả từ search endpoint."""

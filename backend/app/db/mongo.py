@@ -15,7 +15,11 @@ from app.core.config import get_settings
 from app.core.logging import get_logger
 
 if TYPE_CHECKING:
-    from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection, AsyncIOMotorDatabase
+    from motor.motor_asyncio import (
+        AsyncIOMotorClient,
+        AsyncIOMotorCollection,
+        AsyncIOMotorDatabase,
+    )
 
 logger = get_logger(__name__)
 settings = get_settings()

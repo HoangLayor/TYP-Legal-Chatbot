@@ -34,6 +34,7 @@ def setup_rate_limiter(app: FastAPI) -> None:
 
 # ── CORS ─────────────────────────────────────────────────────────────────────
 
+
 def setup_cors(app: FastAPI) -> None:
     """Cấu hình CORS middleware cho FastAPI app.
 
@@ -52,6 +53,7 @@ def setup_cors(app: FastAPI) -> None:
 
 
 # ── API Key Auth (đơn giản) ───────────────────────────────────────────────────
+
 
 def get_api_key(request: Request) -> str | None:
     """Trích xuất API key từ header ``X-API-Key``.

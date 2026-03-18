@@ -48,8 +48,15 @@ class TavilySearcher:
 
     # Từ khoá gợi ý tìm kiếm real-time
     REALTIME_KEYWORDS: list[str] = [
-        "hôm nay", "mới nhất", "gần đây", "vừa qua",
-        "2025", "2026", "hiện tại", "latest", "today",
+        "hôm nay",
+        "mới nhất",
+        "gần đây",
+        "vừa qua",
+        "2025",
+        "2026",
+        "hiện tại",
+        "latest",
+        "today",
     ]
 
     def __init__(self) -> None:
