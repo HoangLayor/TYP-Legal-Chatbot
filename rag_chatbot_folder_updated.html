@@ -1,0 +1,192 @@
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.tree{padding:16px 0}
+.node{display:flex;align-items:flex-start;gap:0;line-height:1.6;cursor:pointer;border-radius:4px;transition:background .15s}
+.node:hover .label{color:var(--color-text-primary)}
+.prefix{color:var(--color-text-tertiary);white-space:pre;user-select:none;flex-shrink:0;font-family:var(--font-mono);font-size:13px}
+.label{color:var(--color-text-secondary);transition:color .15s;font-family:var(--font-mono);font-size:13px}
+.label.dir{color:var(--color-text-primary);font-weight:500}
+.label.root{color:var(--color-text-primary);font-weight:500;font-size:14px}
+.badge{margin-left:8px;font-size:11px;padding:1px 7px;border-radius:10px;font-family:var(--font-sans);font-weight:400;flex-shrink:0;white-space:nowrap}
+.b-fe{background:var(--color-background-info);color:var(--color-text-info)}
+.b-be{background:var(--color-background-success);color:var(--color-text-success)}
+.b-shared{background:var(--color-background-warning);color:var(--color-text-warning)}
+.b-new{background:var(--color-background-danger);color:var(--color-text-danger)}
+.tip{margin:4px 16px 8px 16px;padding:10px 14px;border-radius:var(--border-radius-md);background:var(--color-background-secondary);border:1px solid var(--color-border-tertiary);font-family:var(--font-sans);font-size:13px;color:var(--color-text-secondary);display:none}
+.tip.show{display:block}
+.tip strong{font-weight:500;color:var(--color-text-primary)}
+.tip .new-tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:10px;background:var(--color-background-danger);color:var(--color-text-danger);margin-left:6px;vertical-align:middle}
+.legend{display:flex;gap:12px;padding:0 16px 14px;flex-wrap:wrap;align-items:center}
+.litem{display:flex;align-items:center;gap:6px;font-family:var(--font-sans);font-size:12px;color:var(--color-text-secondary)}
+</style>
+
+<div class="legend">
+  <span class="litem"><span class="badge b-fe">frontend</span> React / Vite</span>
+  <span class="litem"><span class="badge b-be">backend</span> FastAPI / Python</span>
+  <span class="litem"><span class="badge b-shared">shared</span> Config / DevOps</span>
+  <span class="litem"><span class="badge b-new">+ mới</span> Thêm vào pipeline</span>
+</div>
+
+<div class="tree" id="tree"></div>
+<div class="tip" id="tip"></div>
+
+<script>
+const N = true;
+const items = [
+  {d:0, name:"rag-chatbot/", type:"root", info:"Root monorepo. Chứa toàn bộ frontend, backend và DevOps config."},
+  {d:1, name:"frontend/", type:"dir", badge:"b-fe", info:"React + Vite app. Toàn bộ UI chatbot."},
+  {d:2, name:"public/", type:"dir", badge:"b-fe", info:"Static assets: favicon, robots.txt, og-image."},
+  {d:2, name:"src/", type:"dir", badge:"b-fe", info:"Source chính của React app."},
+  {d:3, name:"assets/", type:"dir", badge:"b-fe", info:"Ảnh, font, icon SVG dùng trong app."},
+  {d:3, name:"components/", type:"dir", badge:"b-fe", info:"UI components tái sử dụng: Button, Avatar, Markdown renderer, ChatBubble, SourceCard..."},
+  {d:3, name:"pages/", type:"dir", badge:"b-fe", info:"Route-level components: ChatPage, HistoryPage, SettingsPage."},
+  {d:3, name:"hooks/", type:"dir", badge:"b-fe", info:"Custom hooks: useChat, useStreaming, useScrollToBottom, useChatHistory."},
+  {d:3, name:"services/", type:"dir", badge:"b-fe", info:"API client gọi FastAPI: chat, history, ingest endpoints."},
+  {d:3, name:"store/", type:"dir", badge:"b-fe", info:"Global state (Zustand): chat history, session, UI state."},
+  {d:3, name:"utils/", type:"dir", badge:"b-fe", info:"Helpers: format date, truncate, parse markdown, highlight sources."},
+  {d:3, name:"types/", type:"dir", badge:"b-fe", info:"TypeScript interfaces: Message, Session, Source, SearchResult."},
+  {d:3, name:"main.tsx", type:"file", badge:"b-fe", info:"Entry point React. Mount vào #root."},
+  {d:3, name:"App.tsx", type:"file", badge:"b-fe", info:"Root component, router và layout chính."},
+  {d:2, name:".env.example", type:"file", badge:"b-fe", info:"Mẫu env frontend: VITE_API_URL, VITE_WS_URL."},
+  {d:2, name:"vite.config.ts", type:"file", badge:"b-fe", info:"Proxy /api về FastAPI local để tránh CORS khi dev."},
+  {d:2, name:"tailwind.config.ts", type:"file", badge:"b-fe", info:"Custom colors, fonts, breakpoints cho Tailwind."},
+
+  {d:1, name:"backend/", type:"dir", badge:"b-be", info:"FastAPI application — toàn bộ RAG pipeline, search, memory."},
+  {d:2, name:"app/", type:"dir", badge:"b-be", info:"Application package chính."},
+  {d:3, name:"api/", type:"dir", badge:"b-be", info:"Route handlers, phân version."},
+  {d:4, name:"v1/", type:"dir", badge:"b-be", info:"Prefix /api/v1."},
+  {d:5, name:"chat.py", type:"file", badge:"b-be", info:"POST /chat/stream — nhận query, chạy full RAG pipeline, trả SSE stream."},
+  {d:5, name:"ingest.py", type:"file", badge:"b-be", info:"POST /ingest — upload tài liệu, chunk, embed, index vào vector DB."},
+  {d:5, name:"history.py", type:"file", badge:"b-be", info:"GET/DELETE /history — lấy và xóa lịch sử từ MongoDB."},
+  {d:5, name:"search.py", type:"file", badge:"b-be", info:"GET /search — endpoint debug để test hybrid search + rerank độc lập.", isNew:N},
+
+  {d:3, name:"core/", type:"dir", badge:"b-be", info:"Cấu hình toàn app."},
+  {d:4, name:"config.py", type:"file", badge:"b-be", info:"Pydantic Settings: đọc tất cả env vars, validate type tự động."},
+  {d:4, name:"security.py", type:"file", badge:"b-be", info:"API key auth, CORS middleware, rate limiting."},
+  {d:4, name:"logging.py", type:"file", badge:"b-be", info:"Structured logging với structlog. Log từng bước pipeline để debug.", isNew:N},
+
+  {d:3, name:"rag/", type:"dir", badge:"b-be", info:"Toàn bộ RAG pipeline logic. Tách riêng khỏi API để test độc lập."},
+  {d:4, name:"chunker.py", type:"file", badge:"b-be", info:"Chia tài liệu: fixed-size, semantic, sliding window."},
+  {d:4, name:"embedder.py", type:"file", badge:"b-be", info:"Gọi embedding model (OpenAI / sentence-transformers). Dùng cho cả dense vector và sparse BM25."},
+  {d:4, name:"retriever.py", type:"file", badge:"b-be", info:"Orchestrate hybrid search: gọi dense_search + sparse_search, merge kết quả bằng RRF (Reciprocal Rank Fusion) trước khi rerank.", isNew:N},
+  {d:4, name:"hybrid_search.py", type:"file", badge:"b-be", info:"[MỚI] Dense search (ANN vector) + Sparse search (BM25/keyword) song song. Merge bằng RRF. Tách riêng để dễ tune từng nhánh.", isNew:N},
+  {d:4, name:"reranker.py", type:"file", badge:"b-be", info:"[MỚI] Cross-encoder reranking (Cohere Rerank / bge-reranker-v2). Nhận top-k từ hybrid search, trả top-n cho generator.", isNew:N},
+  {d:4, name:"web_search.py", type:"file", badge:"b-be", info:"[MỚI] Tavily Search API client. Gọi khi query cần thông tin ngoài knowledge base (thời sự, dữ liệu real-time). Kết quả merge vào context trước khi generate.", isNew:N},
+  {d:4, name:"generator.py", type:"file", badge:"b-be", info:"Gọi LLM, build prompt với retrieved context + web results, stream response về client."},
+  {d:4, name:"pipeline.py", type:"file", badge:"b-be", info:"Orchestrate toàn bộ: query → hybrid search → rerank → [web search] → generate. Quyết định khi nào gọi Tavily.", isNew:N},
+
+  {d:3, name:"memory/", type:"dir", badge:"b-be", info:"[MỚI] Quản lý chat history và conversation context với MongoDB.", isNew:N},
+  {d:4, name:"mongo_store.py", type:"file", badge:"b-be", info:"[MỚI] MongoDB async client (Motor). CRUD cho sessions và messages. Index trên session_id + timestamp.", isNew:N},
+  {d:4, name:"history_manager.py", type:"file", badge:"b-be", info:"[MỚI] Load N messages gần nhất, format thành chat context cho LLM. Tự động cắt khi vượt token limit.", isNew:N},
+  {d:4, name:"session.py", type:"file", badge:"b-be", info:"[MỚI] Tạo/đóng session, lưu metadata (user_id, created_at, title). Mỗi conversation là một document MongoDB.", isNew:N},
+
+  {d:3, name:"models/", type:"dir", badge:"b-be", info:"Pydantic schemas: request/response, MongoDB documents, search results."},
+  {d:4, name:"chat.py", type:"file", badge:"b-be", info:"ChatRequest, ChatResponse, StreamChunk schemas."},
+  {d:4, name:"history.py", type:"file", badge:"b-be", info:"[MỚI] Session, Message MongoDB document models. Dùng chung giữa API và memory layer.", isNew:N},
+  {d:4, name:"search.py", type:"file", badge:"b-be", info:"[MỚI] SearchResult, RerankResult, WebSearchResult — dùng xuyên suốt pipeline.", isNew:N},
+
+  {d:3, name:"services/", type:"dir", badge:"b-be", info:"Business logic layer — nối API với RAG và memory."},
+  {d:4, name:"chat_service.py", type:"file", badge:"b-be", info:"Gọi history_manager lấy context → chạy pipeline → lưu message mới vào MongoDB.", isNew:N},
+  {d:4, name:"ingest_service.py", type:"file", badge:"b-be", info:"Nhận file, gọi chunker + embedder, index vào vector DB và BM25 store."},
+  {d:4, name:"history_service.py", type:"file", badge:"b-be", info:"[MỚI] Facade cho API history: list sessions, get messages, delete session.", isNew:N},
+
+  {d:3, name:"db/", type:"dir", badge:"b-be", info:"Database clients và connection factories."},
+  {d:4, name:"vector_db.py", type:"file", badge:"b-be", info:"Vector DB client (Pinecone/Weaviate/Qdrant). Dense search interface."},
+  {d:4, name:"bm25_store.py", type:"file", badge:"b-be", info:"[MỚI] BM25 sparse index (BM25s hoặc Elasticsearch). Sync với vector DB khi ingest.", isNew:N},
+  {d:4, name:"mongo.py", type:"file", badge:"b-be", info:"[MỚI] Motor async client factory. Connection pool, health check, index setup.", isNew:N},
+
+  {d:3, name:"main.py", type:"file", badge:"b-be", info:"FastAPI app factory: routers, middleware, lifespan (connect/disconnect DB)."},
+
+  {d:2, name:"tests/", type:"dir", badge:"b-be", info:"pytest tests — mirror cấu trúc app/."},
+  {d:3, name:"rag/", type:"dir", badge:"b-be", info:"Unit test từng bước: test_chunker, test_hybrid_search, test_reranker, test_tavily.", isNew:N},
+  {d:3, name:"memory/", type:"dir", badge:"b-be", info:"[MỚI] Test MongoDB store với mongomock hoặc testcontainers.", isNew:N},
+  {d:3, name:"api/", type:"dir", badge:"b-be", info:"Integration test các endpoints với TestClient."},
+
+  {d:2, name:"pyproject.toml", type:"file", badge:"b-be", info:"Dependencies: fastapi, motor, tavily-python, cohere/sentence-transformers, bm25s, structlog."},
+  {d:2, name:".env.example", type:"file", badge:"b-be", info:"Env mẫu: OPENAI_API_KEY, TAVILY_API_KEY, MONGODB_URL, VECTOR_DB_URL, COHERE_API_KEY.", isNew:N},
+
+  {d:1, name:"docker/", type:"dir", badge:"b-shared", info:"Dockerfiles cho frontend và backend."},
+  {d:2, name:"Dockerfile.frontend", type:"file", badge:"b-shared", info:"Build React, serve với nginx."},
+  {d:2, name:"Dockerfile.backend", type:"file", badge:"b-shared", info:"Python slim, install deps, run uvicorn."},
+
+  {d:1, name:"docker-compose.yml", type:"file", badge:"b-shared", info:"Stack local: frontend + backend + vector DB + MongoDB + (optional) Elasticsearch cho BM25.", isNew:N},
+  {d:1, name:".github/", type:"dir", badge:"b-shared", info:"CI/CD workflows."},
+  {d:2, name:"workflows/", type:"dir", badge:"b-shared", info:"ci.yml: pytest + vitest. deploy.yml: build & push image."},
+  {d:1, name:".env.example", type:"file", badge:"b-shared", info:"Root env cho docker-compose: ports, image tags, shared secrets."},
+  {d:1, name:"README.md", type:"file", badge:"b-shared", info:"Setup guide, architecture overview, env vars reference."},
+];
+
+function computeIsLast(items) {
+  return items.map((item, i) => {
+    const next = items.slice(i+1).find(x => x.d <= item.d);
+    return !next || next.d < item.d;
+  });
+}
+
+const isLast = computeIsLast(items);
+
+function getPrefix(i, items, isLast) {
+  const depth = items[i].d;
+  if (depth === 0) return '';
+  let pre = '';
+  for (let k = 1; k <= depth; k++) {
+    if (k === depth) {
+      pre += isLast[i] ? '└── ' : '├── ';
+    } else {
+      // check if ancestor at level k has more siblings after i
+      let hasMore = false;
+      for (let j = i+1; j < items.length; j++) {
+        if (items[j].d < k) break;
+        if (items[j].d === k) { hasMore = true; break; }
+      }
+      pre += hasMore ? '│   ' : '    ';
+    }
+  }
+  return pre;
+}
+
+const tree = document.getElementById('tree');
+const tip = document.getElementById('tip');
+let active = -1;
+
+items.forEach((item, i) => {
+  const row = document.createElement('div');
+  row.className = 'node';
+  row.style.padding = '1px 16px';
+
+  const prefix = document.createElement('span');
+  prefix.className = 'prefix';
+  prefix.textContent = getPrefix(i, items, isLast);
+
+  const label = document.createElement('span');
+  label.className = 'label' + (item.type==='root'?' root':item.type==='dir'?' dir':'');
+  label.textContent = item.name;
+
+  row.appendChild(prefix);
+  row.appendChild(label);
+
+  if (item.badge) {
+    const badge = document.createElement('span');
+    badge.className = 'badge ' + item.badge;
+    badge.textContent = item.badge==='b-fe'?'frontend':item.badge==='b-be'?'backend':'shared';
+    row.appendChild(badge);
+  }
+  if (item.isNew) {
+    const nb = document.createElement('span');
+    nb.className = 'badge b-new';
+    nb.textContent = '+ mới';
+    row.appendChild(nb);
+  }
+
+  row.onclick = () => {
+    if (active === i) { tip.classList.remove('show'); active = -1; return; }
+    const newTag = item.isNew ? '<span class="new-tag">+ mới</span>' : '';
+    tip.innerHTML = '<strong>' + item.name + '</strong>' + newTag + ' — ' + item.info;
+    tip.classList.add('show');
+    active = i;
+    row.insertAdjacentElement('afterend', tip);
+  };
+
+  tree.appendChild(row);
+});
+</script>
