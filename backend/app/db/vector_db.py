@@ -20,6 +20,7 @@ settings = get_settings()
 
 # ── Abstract interface ────────────────────────────────────────────────────────
 
+
 class VectorDBClient(ABC):
     """Abstract base class cho tất cả Vector DB clients."""
 
@@ -65,6 +66,7 @@ class VectorDBClient(ABC):
 
 
 # ── Pinecone ──────────────────────────────────────────────────────────────────
+
 
 class PineconeClient(VectorDBClient):
     """Vector DB client sử dụng Pinecone serverless."""
@@ -113,6 +115,7 @@ class PineconeClient(VectorDBClient):
 
 # ── Weaviate ──────────────────────────────────────────────────────────────────
 
+
 class WeaviateClient(VectorDBClient):
     """Vector DB client sử dụng Weaviate."""
 
@@ -159,6 +162,7 @@ class WeaviateClient(VectorDBClient):
 
 
 # ── Qdrant ────────────────────────────────────────────────────────────────────
+
 
 class QdrantClient(VectorDBClient):
     """Vector DB client sử dụng Qdrant."""

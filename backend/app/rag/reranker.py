@@ -40,6 +40,7 @@ class RankedResult:
 
 # ── Abstract interface ────────────────────────────────────────────────────────
 
+
 class BaseReranker(ABC):
     """Abstract base class cho tất cả reranker implementations."""
 
@@ -65,6 +66,7 @@ class BaseReranker(ABC):
 
 
 # ── Cohere Reranker ───────────────────────────────────────────────────────────
+
 
 class CohereReranker(BaseReranker):
     """Reranker sử dụng Cohere Rerank API.
@@ -108,6 +110,7 @@ class CohereReranker(BaseReranker):
 
 # ── BGE Reranker (local) ──────────────────────────────────────────────────────
 
+
 class BGEReranker(BaseReranker):
     """Reranker sử dụng BAAI/bge-reranker-v2-m3 chạy local.
 
@@ -150,6 +153,7 @@ class BGEReranker(BaseReranker):
 
 
 # ── No-op Reranker ────────────────────────────────────────────────────────────
+
 
 class PassthroughReranker(BaseReranker):
     """Reranker giả — chỉ convert SearchResult → RankedResult không đổi thứ tự.

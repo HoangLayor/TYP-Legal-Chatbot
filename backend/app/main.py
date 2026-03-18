@@ -27,6 +27,7 @@ settings = get_settings()
 
 # ── Lifecycle ─────────────────────────────────────────────────────────────────
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Quản lý startup/shutdown của ứng dụng.
@@ -64,6 +65,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 # ── App factory ───────────────────────────────────────────────────────────────
+
 
 def create_app() -> FastAPI:
     """Tạo và cấu hình FastAPI application.
