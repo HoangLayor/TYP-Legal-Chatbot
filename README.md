@@ -2,8 +2,8 @@
 
 Hệ thống chatbot thông minh sử dụng kỹ thuật **Retrieval-Augmented Generation (RAG)** với pipeline nâng cao: Hybrid Search, Reranking, Tavily Web Search và MongoDB Memory.
 
-**Stack:** React + Vite · FastAPI · Python 3.11+  
-**Vector DB:** Pinecone / Weaviate / Qdrant _(cấu hình theo môi trường)_  
+**Stack:** React + Vite · FastAPI · Python 3.11+
+**Vector DB:** Pinecone / Weaviate / Qdrant _(cấu hình theo môi trường)_
 **Memory:** MongoDB · **Web Search:** Tavily · **Reranker:** Cohere / BGE
 
 ---
@@ -420,6 +420,31 @@ MONGODB_URL=mongodb+srv://...   # MongoDB Atlas
 GitHub Actions tự động chạy khi push:
 - `ci.yml` — chạy `pytest` + `vitest`, kiểm tra lint
 - `deploy.yml` — build Docker image, push lên registry khi merge vào `main`
+
+---
+
+## Pre-commit hooks
+
+Dự án dùng [pre-commit](https://pre-commit.com/) để tự động kiểm tra code trước mỗi commit.
+
+```bash
+pip install pre-commit
+pre-commit install   # chạy một lần sau khi clone
+```
+
+Hooks được cấu hình trong [`.pre-commit-config.yaml`](.pre-commit-config.yaml):
+
+| Hook | Mục đích |
+|------|----------|
+| `black` | Format code Python tự động |
+| `trailing-whitespace` | Xóa khoảng trắng thừa cuối dòng |
+| `end-of-file-fixer` | Đảm bảo file kết thúc bằng newline |
+
+Chạy thủ công trên toàn bộ codebase:
+
+```bash
+pre-commit run --all-files
+```
 
 ---
 
