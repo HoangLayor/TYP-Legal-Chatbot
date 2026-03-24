@@ -45,6 +45,7 @@ class Embedder:
         self.dimension = dimension or settings.embedding_dimension
         self.batch_size = batch_size or settings.embedding_batch_size
         # TODO: khởi tạo openai.AsyncOpenAI client ở đây
+        self.client = AsyncOpenAI(api_key=settings.openai_api_key)
 
     async def embed_text(self, text: str) -> list[float]:
         """Embed một text string thành vector.
@@ -59,7 +60,31 @@ class Embedder:
             ValueError: Nếu text rỗng.
             openai.APIError: Nếu API call thất bại.
         """
-        ...
+        if not text or not text.strip():
+            raise ValueError("Văn bản cần embed không được để trống.")
+
+        #Tiền xử lý --> Mô hình hiểu context tốt hơn
+        clean_text = text.replace("\n", " ")
+
+        try:
+            response = await self.client.embeddings.create(
+                input=[clean_text],
+                model=self.model,
+                dimensions=self.dimension  # Tham số dimensions chỉ dùng cho các model đời mới (text-embedding-3)
+            )
+            
+            # 4. Trích xuất mảng vector từ kết quả trả về
+            vector = response.data[0].embedding
+            
+            # 5. Chuẩn hóa vector (như thiết kế của bạn để tối ưu tính toán Cosine Similarity)
+            normalized_vector = self._normalize(vector)
+
+            return normalized_vector
+
+        except openai.APIError as e:
+            # Ghi log lỗi để dev dễ debug, sau đó ném lỗi ra ngoài cho API/Router xử lý
+            logger.error(f"Lỗi khi gọi OpenAI Embeddings API: {e}")
+            raise
 
     async def embed_batch(self, texts: list[str]) -> list[list[float]]:
         """Embed danh sách texts theo batch để tối ưu số lần call API.
@@ -73,7 +98,36 @@ class Embedder:
         Returns:
             List tương ứng với embedding của từng text trong ``texts``.
         """
-        ...
+        if not texts:
+            return []
+        all_embeddings: list[list[float]] = []
+        
+        # Vòng lặp cắt danh sách lớn thành các batch nhỏ dựa trên batch_size
+        for i in range(0, len(texts), self.batch_size):
+            batch_texts = texts[i : i + self.batch_size]
+            clean_texts = [text.replace("\n", " ") for text in batch_texts]
+            
+            try:
+                # Gửi toàn bộ lô này (input là một list) lên OpenAI trong 1 lần gọi
+                response = await self.client.embeddings.create(
+                    input=clean_texts,
+                    model=self.model,
+                    dimensions=self.dimension
+                )
+                
+                # OpenAI sẽ trả về danh sách vector theo đúng thứ tự mảng input
+                for data in response.data:
+                    vector = data.embedding
+                    normalized_vector = self._normalize(vector)
+
+                    all_embeddings.append(normalized_vector)
+                    
+            except openai.APIError as e:
+                logger.error(f"Lỗi khi gọi OpenAI API cho batch từ index {i}: {e}")
+                # Bắn lỗi ra để dừng luồng chạy, tránh lưu dữ liệu bị thiếu vào DB
+                raise
+                
+        return all_embeddings
 
     def _normalize(self, vector: list[float]) -> list[float]:
         """Normalize vector về unit length (L2 normalization).
@@ -86,7 +140,12 @@ class Embedder:
         Returns:
             Vector đã normalize.
         """
-        ...
+        # 1. Tính độ dài (magnitude) của vector dựa trên công thức L2 Norm
+        magnitude = math.sqrt(sum(x * x for x in vector))
+        
+        if magnitude == 0:
+            return vector
+        return [x / magnitude for x in vector]
 
     def estimate_tokens(self, text: str) -> int:
         """Ước tính số token của text dùng tiktoken.
@@ -97,7 +156,24 @@ class Embedder:
         Returns:
             Số token ước tính.
         """
-        ...
+        if not text:
+            return 0
+            
+        try:
+            # Lấy bộ từ điển (encoding) tương ứng với model bạn đang dùng.
+            # Đa số các model đời mới (GPT-4, text-embedding-3) đều dùng bộ "cl100k_base"
+            encoding = tiktoken.encoding_for_model(self.model)
+        except KeyError:
+            # Nếu truyền sai tên model hoặc model quá mới chưa cập nhật,
+            # hệ thống sẽ fallback (lùi về) dùng bộ đếm mặc định chuẩn nhất hiện nay
+            encoding = tiktoken.get_encoding("cl100k_base")
+            
+        # Mã hóa đoạn text thành một mảng các con số (mỗi số là ID của 1 token)
+        # Ví dụ: [1234, 567, 8910]
+        tokens = encoding.encode(text)
+        
+        # Đếm số lượng phần tử trong mảng chính là số token
+        return len(tokens)
 
 
 # ── Singleton ─────────────────────────────────────────────────────────────────
