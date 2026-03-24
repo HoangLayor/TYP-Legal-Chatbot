@@ -244,7 +244,7 @@ def get_vector_db() -> VectorDBClient:
     return _vector_db_instance
 
 
-# Bên trong file vector_db.py
+# Bên trong file vector_db.py sử dụng cho bên hybrid_search
 # async def check_exists(self, doc_id: str) -> bool:
     # Query Qdrant/Milvus xem có chunk nào chứa metadata {"source_id": doc_id} không
     # Trả về True/False
