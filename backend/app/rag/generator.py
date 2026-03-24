@@ -14,6 +14,9 @@ from app.core.logging import get_logger
 from app.rag.reranker import RankedResult
 from app.rag.web_search import WebSearchResult
 
+from openai import AsyncOpenAI
+from typing import AsyncIterator
+
 logger = get_logger(__name__)
 settings = get_settings()
 
@@ -56,8 +59,18 @@ class PromptBuilder:
         Returns:
             String dạng ``[{index}] {source} — {text}``.
         """
-        ...
-
+        # Trích xuất nguồn từ metadata (ưu tiên filename, sau đó đến source nếu có)
+        source = result.metadata.get("filename") or result.metadata.get("source") or "Tài liệu nội bộ"
+        
+        # Nếu có thông tin trang (page), ghép thêm vào để trích dẫn chi tiết hơn
+        page = result.metadata.get("page")
+        if page:
+            source += f" (Trang {page})"
+            
+        clean_text = result.text.strip()
+        return f"[{index}] Nguồn: {source} — {clean_text}"
+    
+    
     def _format_history(self, history: list[dict[str, str]]) -> list[dict[str, str]]:
         """Cắt history để vừa token limit, giữ lại N messages gần nhất.
 
@@ -67,7 +80,22 @@ class PromptBuilder:
         Returns:
             History đã trim, vẫn giữ thứ tự chronological.
         """
-        ...
+        if not history:
+            return []
+
+        max_messages = 10 # 10 tin nhắt ~ 5 lần hỏi - đáp gàn nhất
+        
+        # Cắt lấy max_messages cuối cùng (ví dụ: lấy từ cuối ngược lên trên)
+        trimmed_history = history[-max_messages:]
+
+        # --- XỬ LÝ QUAN TRỌNG ĐỂ TRÁNH LỖI API ---
+        # Rất nhiều model (đặc biệt là Claude/Anthropic) có quy định khắt khe: 
+        # Lịch sử hội thoại PHẢI bắt đầu bằng tin nhắn của "user", không được bắt đầu bằng "assistant".
+        # Nếu sau khi cắt mà tin nhắn đầu tiên lại rơi vào lượt của bot, ta bỏ luôn tin nhắn đó.
+        if trimmed_history and trimmed_history[0].get("role") == "assistant":
+            trimmed_history = trimmed_history[1:]
+        return trimmed_history
+    
 
     def build_messages(
         self,
@@ -92,7 +120,37 @@ class PromptBuilder:
         Returns:
             List dict ``[{"role": str, "content": str}]`` sẵn cho LLM API.
         """
-        ...
+        context_parts = []
+        index = 1 
+        # Xử lý tài liệu lấy từ reranker.py
+        if ranked_results:
+            for result in ranked_results:
+                context_parts.append(self._format_chunk(result, index))
+                index += 1
+                
+        # Xử lý tài liệu từ Internet (nếu có)
+        if web_results:
+            # Thêm một vạch ngăn cách nhỏ để AI phân biệt được đâu là luật nội bộ, đâu là web
+            context_parts.append("\n--- KẾT QUẢ TÌM KIẾM INTERNET ---")
+            for web in web_results:
+                clean_content = web.content.strip()
+                context_parts.append(f"Web: {web.title} ({web.url}) — {clean_content}")
+                
+        # Gộp tất cả thành một chuỗi văn bản lớn
+        context_str = "\n".join(context_parts)
+        if not context_str.strip():
+            context_str = "Hệ thống không tìm thấy tài liệu tham khảo nào phù hợp với câu hỏi này."
+            
+        #Lắp ráp System Prompt
+        system_content = SYSTEM_PROMPT_TEMPLATE.format(context=context_str)
+        messages = [{"role": "system", "content": system_content}]
+        
+        # Nối lịch sử trò chuyện (đã được cắt gọt an toàn)
+        trimmed_history = self._format_history(history)
+        messages.extend(trimmed_history)
+        
+        messages.append({"role": "user", "content": query})
+        return messages
 
 
 class Generator:
@@ -115,7 +173,12 @@ class Generator:
         self.model = settings.openai_model
         self.prompt_builder = PromptBuilder()
         # TODO: khởi tạo openai.AsyncOpenAI hoặc anthropic.AsyncAnthropic
-
+        # Khởi tạo OpenAI Client bất đồng bộ
+        if self.provider == "openai":
+            self.client = AsyncOpenAI(api_key=settings.openai_api_key) #AsyncAnthropic
+        else:
+            raise ValueError(f"Chưa hỗ trợ provider: {self.provider}")
+        
     async def generate_stream(
         self,
         query: str,
@@ -139,7 +202,37 @@ class Generator:
         Raises:
             openai.APIError | anthropic.APIError: Nếu LLM call thất bại.
         """
-        ...
+        # 1. Gọi "Thợ lắp ráp" để đóng gói toàn bộ dữ liệu thành kịch bản chuẩn
+        messages = self.prompt_builder.build_messages(
+            query=query,
+            ranked_results=ranked_results,
+            history=history,
+            web_results=web_results
+        )
+
+        try:
+            # 2. Gọi API của OpenAI với cờ stream=True (Đây là chìa khóa quan trọng nhất)
+            response = await self.client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                temperature=0.2, # Để temperature thấp (0.2) giúp AI trả lời pháp lý nghiêm túc, không bay bổng
+                stream=True      # Bật chế độ trả về từng chữ
+            )
+
+            # 3. Hứng từng mảnh chữ (chunk) rớt xuống từ OpenAI và ném thẳng ra ngoài
+            async for chunk in response:
+                # OpenAI trả về một object phức tạp, ta chỉ móc lấy phần 'content' (chữ)
+                content = chunk.choices[0].delta.content
+                
+                # Nếu có chữ (không phải None hay chuỗi rỗng), ta yield nó ra
+                if content is not None:
+                    yield content
+
+        except openai.APIError as e:
+            logger.error(f"Lỗi API từ OpenAI khi generate stream: {e}")
+            # Nếu lỗi, yield ra một câu xin lỗi mượt mà để giao diện không bị treo
+            yield "\n\n[Hệ thống] Xin lỗi, máy chủ AI đang gặp sự cố. Vui lòng thử lại sau."
+            raise
 
     async def generate(
         self,
@@ -161,7 +254,26 @@ class Generator:
         Returns:
             Toàn bộ response text từ LLM.
         """
-        ...
+        messages = self.prompt_builder.build_messages(
+            query=query, 
+            ranked_results=ranked_results, 
+            history=history, 
+            web_results=web_results
+        )
+
+        try:
+            # Không có stream=True
+            response = await self.client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                temperature=0.2
+            )
+            # Trả về toàn bộ cục chữ một lần
+            return response.choices[0].message.content or ""
+
+        except openai.APIError as e:
+            logger.error(f"Lỗi generate non-stream: {e}")
+            raise
 
 
 # ── Singleton ─────────────────────────────────────────────────────────────────

@@ -70,13 +70,13 @@ class Settings(BaseSettings):
 
     # ── Reranker ─────────────────────────────────────────────
     reranker_provider: Literal["cohere", "bge", "none"] = "cohere"
-    cohere_api_key: str = ""
+    cohere_api_key: str = Field(default="") # KHÔNG paste key vào đây rồi đẩy lên github
     bge_reranker_model: str = "BAAI/bge-reranker-v2-m3"
     rerank_top_k: int = 20
     rerank_top_n: int = 5
 
     # ── Tavily Web Search ────────────────────────────────────
-    tavily_api_key: str = ""
+    tavily_api_key: str = "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"
     tavily_search_depth: Literal["basic", "advanced"] = "advanced"
     tavily_max_results: int = 5
     web_search_threshold: float = Field(0.4, ge=0.0, le=1.0)

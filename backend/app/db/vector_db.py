@@ -242,3 +242,9 @@ def get_vector_db() -> VectorDBClient:
         raise ValueError(f"Unsupported vector DB provider: {provider}")
 
     return _vector_db_instance
+
+
+# Bên trong file vector_db.py
+# async def check_exists(self, doc_id: str) -> bool:
+    # Query Qdrant/Milvus xem có chunk nào chứa metadata {"source_id": doc_id} không
+    # Trả về True/False

@@ -1,0 +1,11 @@
+langchain-community
+langchain-openai 
+langchain-google-genai 
+langchain-chroma 
+langchain 
+langgraph 
+tavily-python 
+langchain-huggingface 
+langchain-tavily
+PyPDF2
+python-docx
