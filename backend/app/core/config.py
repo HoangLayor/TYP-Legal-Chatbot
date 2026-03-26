@@ -43,9 +43,9 @@ class Settings(BaseSettings):
     anthropic_api_key: str = ""
 
     # ── Embedding ────────────────────────────────────────────
-    embedding_model: str = "text-embedding-3-large"
-    embedding_dimension: int = 3072
-    embedding_batch_size: int = 100
+    embedding_model: str = "BAAI/bge-m3"
+    embedding_dimension: int = 1024
+    embedding_batch_size: int = 1128
 
     # ── Vector DB ────────────────────────────────────────────
     vector_db_provider: Literal["pinecone", "weaviate", "qdrant"] = "pinecone"

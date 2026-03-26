@@ -288,3 +288,9 @@ class DocumentChunker:
         )
         
         return chunks
+
+
+if __name__ == "__main__":
+    import pprint
+    documentchunker = DocumentChunker()
+    pprint.pprint(documentchunker.chunk_file(file_path = "/teamspace/studios/this_studio/TYP-Legal-Chatbot/backend/app/rag/luat_lao_dong.txt")[0])

@@ -12,6 +12,10 @@ from typing import Any
 from app.core.config import get_settings
 from app.core.logging import get_logger
 
+import asyncio
+import tiktoken
+import math
+from sentence_transformers import SentenceTransformer
 logger = get_logger(__name__)
 settings = get_settings()
 
@@ -45,7 +49,8 @@ class Embedder:
         self.dimension = dimension or settings.embedding_dimension
         self.batch_size = batch_size or settings.embedding_batch_size
         # TODO: khởi tạo openai.AsyncOpenAI client ở đây
-        self.client = AsyncOpenAI(api_key=settings.openai_api_key)
+        # self.client = AsyncOpenAI(api_key=settings.openai_api_key)
+        self.encoder = SentenceTransformer(self.model)
 
     async def embed_text(self, text: str) -> list[float]:
         """Embed một text string thành vector.
@@ -67,23 +72,28 @@ class Embedder:
         clean_text = text.replace("\n", " ")
 
         try:
+            '''
+            # đây là của openAI
             response = await self.client.embeddings.create(
                 input=[clean_text],
                 model=self.model,
-                dimensions=self.dimension  # Tham số dimensions chỉ dùng cho các model đời mới (text-embedding-3)
+                dimensions=self.dimension 
             )
-            
-            # 4. Trích xuất mảng vector từ kết quả trả về
             vector = response.data[0].embedding
-            
-            # 5. Chuẩn hóa vector (như thiết kế của bạn để tối ưu tính toán Cosine Similarity)
             normalized_vector = self._normalize(vector)
-
             return normalized_vector
+            '''
+            # Dùng asyncio.to_thread để không làm block event loop của ứng dụng
+            # Tham số normalize_embeddings=True thay thế cho hàm _normalize thủ công
+            vector = await asyncio.to_thread(
+                self.encoder.encode, 
+                clean_text, 
+                normalize_embeddings=True
+            )
+            return vector.tolist()
 
-        except openai.APIError as e:
-            # Ghi log lỗi để dev dễ debug, sau đó ném lỗi ra ngoài cho API/Router xử lý
-            logger.error(f"Lỗi khi gọi OpenAI Embeddings API: {e}")
+        except Exception as e:
+            logger.error(f"Lỗi khi tính toán embedding với {self.model}: {e}")
             raise
 
     async def embed_batch(self, texts: list[str]) -> list[list[float]]:
@@ -108,6 +118,7 @@ class Embedder:
             clean_texts = [text.replace("\n", " ") for text in batch_texts]
             
             try:
+                '''
                 # Gửi toàn bộ lô này (input là một list) lên OpenAI trong 1 lần gọi
                 response = await self.client.embeddings.create(
                     input=clean_texts,
@@ -121,61 +132,80 @@ class Embedder:
                     normalized_vector = self._normalize(vector)
 
                     all_embeddings.append(normalized_vector)
+                '''
+                vectors = await asyncio.to_thread(
+                    self.encoder.encode,
+                    clean_texts,
+                    batch_size=self.batch_size,
+                    normalize_embeddings=True,
+                    show_progress_bar=True
+                )
+                return vectors.tolist()
                     
-            except openai.APIError as e:
-                logger.error(f"Lỗi khi gọi OpenAI API cho batch từ index {i}: {e}")
-                # Bắn lỗi ra để dừng luồng chạy, tránh lưu dữ liệu bị thiếu vào DB
+            except Exception as e:
+                logger.error(f"Lỗi khi embed batch với {self.model}: {e}")
                 raise
                 
         return all_embeddings
 
-    def _normalize(self, vector: list[float]) -> list[float]:
-        """Normalize vector về unit length (L2 normalization).
+    # def _normalize(self, vector: list[float]) -> list[float]:
+    #     """Normalize vector về unit length (L2 normalization).
 
-        Cần thiết cho cosine similarity tương đương dot product.
+    #     Cần thiết cho cosine similarity tương đương dot product.
 
-        Args:
-            vector: Vector gốc.
+    #     Args:
+    #         vector: Vector gốc.
 
-        Returns:
-            Vector đã normalize.
-        """
-        # 1. Tính độ dài (magnitude) của vector dựa trên công thức L2 Norm
-        magnitude = math.sqrt(sum(x * x for x in vector))
+    #     Returns:
+    #         Vector đã normalize.
+    #     """
+    #     # 1. Tính độ dài (magnitude) của vector dựa trên công thức L2 Norm
+    #     magnitude = math.sqrt(sum(x * x for x in vector))
         
         if magnitude == 0:
             return vector
         return [x / magnitude for x in vector]
 
+    # def estimate_tokens(self, text: str) -> int:
+    #     """Ước tính số token của text dùng tiktoken.
+
+    #     Args:
+    #         text: Văn bản cần đếm token.
+
+    #     Returns:
+    #         Số token ước tính.
+    #     """
+    #     if not text:
+    #         return 0
+            
+    #     try:
+    #         # Lấy bộ từ điển (encoding) tương ứng với model bạn đang dùng.
+    #         # Đa số các model đời mới (GPT-4, text-embedding-3) đều dùng bộ "cl100k_base"
+    #         encoding = tiktoken.encoding_for_model(self.model)
+    #     except KeyError:
+    #         # Nếu truyền sai tên model hoặc model quá mới chưa cập nhật,
+    #         # hệ thống sẽ fallback (lùi về) dùng bộ đếm mặc định chuẩn nhất hiện nay
+    #         encoding = tiktoken.get_encoding("cl100k_base")
+            
+    #     # Mã hóa đoạn text thành một mảng các con số (mỗi số là ID của 1 token)
+    #     # Ví dụ: [1234, 567, 8910]
+    #     tokens = encoding.encode(text)
+        
+    #     # Đếm số lượng phần tử trong mảng chính là số token
+    #     return len(tokens)
+
     def estimate_tokens(self, text: str) -> int:
-        """Ước tính số token của text dùng tiktoken.
-
-        Args:
-            text: Văn bản cần đếm token.
-
-        Returns:
-            Số token ước tính.
-        """
+        """Ước tính số token của text dựa trên Tokenizer của BGE-M3."""
         if not text:
             return 0
             
         try:
-            # Lấy bộ từ điển (encoding) tương ứng với model bạn đang dùng.
-            # Đa số các model đời mới (GPT-4, text-embedding-3) đều dùng bộ "cl100k_base"
-            encoding = tiktoken.encoding_for_model(self.model)
-        except KeyError:
-            # Nếu truyền sai tên model hoặc model quá mới chưa cập nhật,
-            # hệ thống sẽ fallback (lùi về) dùng bộ đếm mặc định chuẩn nhất hiện nay
-            encoding = tiktoken.get_encoding("cl100k_base")
-            
-        # Mã hóa đoạn text thành một mảng các con số (mỗi số là ID của 1 token)
-        # Ví dụ: [1234, 567, 8910]
-        tokens = encoding.encode(text)
-        
-        # Đếm số lượng phần tử trong mảng chính là số token
-        return len(tokens)
-
-
+            # Sử dụng tokenizer chuẩn đi kèm với mô hình
+            tokens = self.encoder.tokenizer.encode(text)
+            return len(tokens)
+        except Exception as e:
+            logger.error(f"Lỗi khi đếm token: {e}")
+            return 0
 # ── Singleton ─────────────────────────────────────────────────────────────────
 
 _embedder: Embedder | None = None

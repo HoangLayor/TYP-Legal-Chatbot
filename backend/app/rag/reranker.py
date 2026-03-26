@@ -284,7 +284,7 @@ class PassthroughReranker(BaseReranker):
             List[RankedResult] với score = RRF score gốc, giới hạn top_n.
         """
         if not results:
-            return []Cohere
+            return []
 
         ranked_results: list[RankedResult] = []
         

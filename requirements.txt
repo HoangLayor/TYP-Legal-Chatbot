@@ -9,3 +9,5 @@ langchain-huggingface
 langchain-tavily
 PyPDF2
 python-docx
+tiktoken
+sentence_transformers
