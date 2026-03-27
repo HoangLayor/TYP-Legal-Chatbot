@@ -10,6 +10,8 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from typing import Any
+import qdrant_client
+from qdrant_client.models import PointStruct, PointIdsList, Filter, FieldCondition, MatchValue
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
@@ -65,6 +67,14 @@ class VectorDBClient(ABC):
         ...
 
 
+    @abstractmethod
+    async def check_exists(self, doc_id: str) -> bool:
+        """Kiểm tra xem một file/document đã được index vào Qdrant chưa.
+        Dựa vào field 'source_id' lưu trong metadata.
+        """
+        ...
+
+
 # ── Pinecone ──────────────────────────────────────────────────────────────────
 
 
@@ -112,6 +122,11 @@ class PineconeClient(VectorDBClient):
         """
         ...
 
+    async def check_exists(self, doc_id: str) -> bool:
+        """Kiểm tra xem một file/document đã được index vào Qdrant chưa.
+        Dựa vào field 'source_id' lưu trong metadata.
+        """
+        ...
 
 # ── Weaviate ──────────────────────────────────────────────────────────────────
 
@@ -160,6 +175,11 @@ class WeaviateClient(VectorDBClient):
         """
         ...
 
+    async def check_exists(self, doc_id: str) -> bool:
+        """Kiểm tra xem một file/document đã được index vào Qdrant chưa.
+        Dựa vào field 'source_id' lưu trong metadata.
+        """
+        ...
 
 # ── Qdrant ────────────────────────────────────────────────────────────────────
 
@@ -169,7 +189,20 @@ class QdrantClient(VectorDBClient):
 
     def __init__(self) -> None:
         """Khởi tạo Qdrant client và tạo collection nếu chưa có."""
-        ...
+        """Khởi tạo Qdrant client."""
+        # Đọc cấu hình từ settings (bạn cần thêm các biến này vào file config của bạn)
+        # Nếu url là ":memory:", Qdrant sẽ chạy trực tiếp trên RAM (tiện cho test)
+        self.url = getattr(settings, "qdrant_url", "http://localhost:6333")
+        self.api_key = getattr(settings, "qdrant_api_key", None)
+        self.collection_name = getattr(settings, "qdrant_collection_name", "legal_chatbot_collection")
+        
+        # Sử dụng AsyncQdrantClient để tương thích với các hàm async (bất đồng bộ)
+        self.client = qdrant_client.AsyncQdrantClient(
+            url=self.url,
+            api_key=self.api_key,
+        )
+        # print(self.client.get_collections())
+        logger.info(f"Đã khởi tạo kết nối Async Qdrant tới collection: {self.collection_name}")
 
     async def upsert(self, vectors: list[dict[str, Any]]) -> dict[str, Any]:
         """Upsert points vào Qdrant collection.
@@ -180,7 +213,27 @@ class QdrantClient(VectorDBClient):
         Returns:
             ``{"upserted_count": int}``
         """
-        ...
+        if not vectors:
+            return {"upserted_count": 0}
+
+        # Qdrant sử dụng khái niệm PointStruct để lưu trữ 1 vector
+        points = [
+            PointStruct(
+                id=v["id"],               # ID của chunk (chuỗi UUID hoặc số nguyên)
+                vector=v["values"],       # Mảng float (embedding)
+                payload=v.get("metadata", {}) # Metadata (ID luật, text gốc,...)
+            )
+            for v in vectors
+        ]
+
+        # Đẩy dữ liệu lên Qdrant
+        operation_info = await self.client.upsert(
+            collection_name=self.collection_name,
+            points=points
+        )
+        
+        logger.info(f"Đã upsert {len(points)} vectors vào Qdrant. Trạng thái: {operation_info.status}")
+        return {"upserted_count": len(points), "status": operation_info.status}
 
     async def query(
         self,
@@ -198,7 +251,24 @@ class QdrantClient(VectorDBClient):
         Returns:
             List ``{"id": str, "score": float, "metadata": dict}``.
         """
-        ...
+        search_result = await self.client.search(                    #type: ignore
+            collection_name=self.collection_name,
+            query_vector=vector,
+            limit=top_k,
+            query_filter=filter,
+            with_payload=True, # Bắt buộc True để lấy lại được metadata (text)
+        )
+
+        # Chuyển đổi định dạng kết quả của Qdrant về chuẩn chung của Interface
+        results = [
+            {
+                "id": str(hit.id),
+                "score": hit.score,
+                "metadata": hit.payload or {}
+            }
+            for hit in search_result
+        ]
+        return results
 
     async def delete(self, ids: list[str]) -> None:
         """Xoá points khỏi Qdrant theo ID.
@@ -206,8 +276,39 @@ class QdrantClient(VectorDBClient):
         Args:
             ids: Danh sách point ID.
         """
-        ...
+        if not ids:
+            return
 
+        await self.client.delete(
+            collection_name=self.collection_name,
+            points_selector=PointIdsList(points=ids)                       # type: ignore
+        )
+        logger.info(f"Đã xoá {len(ids)} vectors khỏi Qdrant.")
+
+
+    async def check_exists(self, doc_id: str) -> bool:
+        """Kiểm tra xem một file/document đã được index vào Qdrant chưa.
+        Dựa vào field 'source_id' lưu trong metadata.
+        """
+        # Sử dụng API scroll của Qdrant để tìm xem có bất kỳ chunk nào 
+        # mang payload (metadata) chứa source_id khớp với doc_id không.
+        records, _ = await self.client.scroll(
+            collection_name=self.collection_name,
+            scroll_filter=Filter(
+                must=[
+                    FieldCondition(
+                        key="source_id", # Tên field trong metadata
+                        match=MatchValue(value=doc_id)
+                    )
+                ]
+            ),
+            limit=1, # Chỉ cần tìm thấy 1 cái là đủ kết luận True
+            with_payload=False,
+            with_vectors=False
+        )
+        
+        is_exist = len(records) > 0
+        return is_exist
 
 # ── Factory ───────────────────────────────────────────────────────────────────
 
@@ -242,9 +343,3 @@ def get_vector_db() -> VectorDBClient:
         raise ValueError(f"Unsupported vector DB provider: {provider}")
 
     return _vector_db_instance
-
-
-# Bên trong file vector_db.py sử dụng cho bên hybrid_search
-# async def check_exists(self, doc_id: str) -> bool:
-    # Query Qdrant/Milvus xem có chunk nào chứa metadata {"source_id": doc_id} không
-    # Trả về True/False

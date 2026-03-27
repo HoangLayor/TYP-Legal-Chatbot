@@ -56,7 +56,7 @@ class Settings(BaseSettings):
     embedding_batch_size: int = 128
 
     # ── Vector DB ────────────────────────────────────────────
-    vector_db_provider: Literal["pinecone", "weaviate", "qdrant"] = "pinecone"
+    vector_db_provider: Literal["pinecone", "weaviate", "qdrant"] = "qdrant"
 
     ## Pinecone
     pinecone_api_key: str = ""
@@ -71,7 +71,7 @@ class Settings(BaseSettings):
     ## Qdrant
     qdrant_url: str = "http://localhost:6333"
     qdrant_api_key: str = ""
-    qdrant_collection_name: str = "rag-chatbot"
+    qdrant_collection_name: str = "TYP-legal-rag-chatbot"
 
     # ── BM25 ─────────────────────────────────────────────────
     bm25_store_path: str = "./data/bm25_index"

@@ -226,7 +226,7 @@ class Generator:
         try:
             response = await self.client.aio.models.generate_content_stream(
                 model=self.model,
-                contents=contents,
+                contents=contents,                                                                  # type: ignore
                 config=types.GenerateContentConfig(
                     temperature=0.2, # Trả lời pháp lý nghiêm túc
                     system_instruction=system_instruction
@@ -272,7 +272,7 @@ class Generator:
         try:
             response = await self.client.aio.models.generate_content(
                 model=self.model,
-                contents=contents,
+                contents=contents,                                                                          # type: ignore
                 config=types.GenerateContentConfig(
                     temperature=0.2,
                     system_instruction=system_instruction
