@@ -7,7 +7,7 @@ Tavily Web Search client — tìm kiếm web khi knowledge base không đủ th�
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Literal
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
@@ -60,6 +60,7 @@ class TavilySearcher:
         "latest",
         "today",
     ]
+    search_depth: Literal['basic', 'advanced', 'fast', 'ultra-fast']
 
     def __init__(self) -> None:
         """Khởi tạo Tavily async client."""
@@ -90,6 +91,8 @@ class TavilySearcher:
         score_below_threshold = max_rerank_score < settings.web_search_threshold
         has_realtime_keyword = any(kw in query.lower() for kw in self.REALTIME_KEYWORDS)
         return score_below_threshold or has_realtime_keyword
+
+
 
     async def search(self, query: str) -> list[WebSearchResult]:
         """Thực hiện Tavily web search.
@@ -133,6 +136,11 @@ class TavilySearcher:
                 )
 
             return results
+        except Exception as e:
+            logger.error(f"Lỗi khi gọi Tavily Search API với query '{query}': {e}")
+            return []
+
+
 
     def format_for_context(self, results: list[WebSearchResult]) -> str:
         """Định dạng kết quả web thành string để nhúng vào prompt context.
@@ -187,3 +195,18 @@ def get_tavily_searcher() -> TavilySearcher:
     if _tavily_searcher is None:
         _tavily_searcher = TavilySearcher()
     return _tavily_searcher
+
+
+if __name__ == "__main__":
+    import asyncio
+    async def main():
+        searcher = TavilySearcher()
+        list_res = await searcher.search("Giá xăng hôm nay là bao nhiêu?")
+        # for i, res in enumerate(list_res):
+        #     print(f'{i + 1}: {res.title}')
+        #     print(f'url: {res.url}')
+        #     print(res.content)
+        #     print("====================================================================================================")
+        print(searcher.format_for_context(list_res))
+
+    asyncio.run(main())

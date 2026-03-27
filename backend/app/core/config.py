@@ -12,6 +12,12 @@ from typing import Literal
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pathlib import Path
+
+# Xác định đường dẫn đến file .env
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+ENV_FILE_PATH = BASE_DIR / ".env"
+
 
 
 class Settings(BaseSettings):
@@ -22,7 +28,7 @@ class Settings(BaseSettings):
     """
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=ENV_FILE_PATH,
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
@@ -32,20 +38,22 @@ class Settings(BaseSettings):
     app_env: Literal["development", "production"] = "development"
     app_host: str = "0.0.0.0"
     app_port: int = 8000
-    secret_key: str = Field(..., min_length=32)
+    secret_key: str = Field(default="", min_length=32)
     allowed_origins: list[str] = ["http://localhost:5173"]
     api_rate_limit: str = "60/minute"
 
     # ── LLM ──────────────────────────────────────────────────
-    llm_provider: Literal["openai", "anthropic"] = "openai"
+    llm_provider: Literal["openai", "anthropic", "gemini"] = "gemini"
     openai_api_key: str = ""
     openai_model: str = "gpt-4o-mini"
     anthropic_api_key: str = ""
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-2.5-flash"
 
     # ── Embedding ────────────────────────────────────────────
     embedding_model: str = "BAAI/bge-m3"
     embedding_dimension: int = 1024
-    embedding_batch_size: int = 1128
+    embedding_batch_size: int = 128
 
     # ── Vector DB ────────────────────────────────────────────
     vector_db_provider: Literal["pinecone", "weaviate", "qdrant"] = "pinecone"
@@ -76,21 +84,21 @@ class Settings(BaseSettings):
     rerank_top_n: int = 5
 
     # ── Tavily Web Search ────────────────────────────────────
-    tavily_api_key: str = "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"
-    tavily_search_depth: Literal["basic", "advanced"] = "advanced"
+    tavily_api_key: str = ""
+    tavily_search_depth: Literal['basic', 'advanced', 'fast', 'ultra-fast'] = "advanced"
     tavily_max_results: int = 5
-    web_search_threshold: float = Field(0.4, ge=0.0, le=1.0)
+    web_search_threshold: float = Field(default=0.4, ge=0.0, le=1.0)
 
     # ── MongoDB ──────────────────────────────────────────────
     mongodb_url: str = "mongodb://localhost:27017"
     mongodb_db_name: str = "rag_chatbot"
     sessions_collection: str = "sessions"
-    history_max_messages: int = Field(20, ge=1)
-    history_max_tokens: int = Field(4096, ge=256)
+    history_max_messages: int = Field(default=20, ge=1) # ghi là Field(20, ge=1) cũng được nhưng IDE sẽ gạch đỏ setting bên dưới dùng không lỗi
+    history_max_tokens: int = Field(default=4096, ge=256)
 
     # ── Chunking ─────────────────────────────────────────────
-    default_chunk_size: int = Field(512, ge=64)
-    default_chunk_overlap: int = Field(50, ge=0)
+    default_chunk_size: int = Field(default=512, ge=64)
+    default_chunk_overlap: int = Field(default=50, ge=0)
 
     @field_validator("allowed_origins", mode="before")
     @classmethod
@@ -99,6 +107,7 @@ class Settings(BaseSettings):
         if isinstance(v, str):
             return [origin.strip() for origin in v.split(",")]
         return v
+
 
 
 @lru_cache(maxsize=1)

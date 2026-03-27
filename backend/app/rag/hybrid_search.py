@@ -102,8 +102,8 @@ class HybridSearcher:
             # 2. Tìm kiếm nội bộ: Gửi Vector xuống cơ sở dữ liệu (Vector DB)
             # Giả định self.vector_db.search() trả về danh sách các dictionary:
             # [{"id": "...", "score": 0.85, "text": "...", "metadata": {...}}, ...]
-            raw_results = await self.vector_db.search(
-                query_vector=query_vector,
+            raw_results = await self.vector_db.query(
+                vector=query_vector,
                 top_k=top_k,
                 filter=filter
             )
@@ -156,6 +156,8 @@ class HybridSearcher:
             logger.error(f"Lỗi nhánh Dense Search: {e}")
             # Trả về mảng rỗng để hệ thống không sập, lát nữa BM25 (Sparse) sẽ gánh tạ thay!
             return []
+
+
 
     def _sparse_search(self, query: str, top_k: int) -> list[dict[str, Any]]:
         """Nhánh sparse search: BM25 keyword matching.

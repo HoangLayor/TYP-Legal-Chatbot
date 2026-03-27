@@ -140,7 +140,7 @@ class Embedder:
                     normalize_embeddings=True,
                     show_progress_bar=True
                 )
-                return vectors.tolist()
+                all_embeddings.extend(vectors.tolist())
                     
             except Exception as e:
                 logger.error(f"Lỗi khi embed batch với {self.model}: {e}")
@@ -162,9 +162,9 @@ class Embedder:
     #     # 1. Tính độ dài (magnitude) của vector dựa trên công thức L2 Norm
     #     magnitude = math.sqrt(sum(x * x for x in vector))
         
-        if magnitude == 0:
-            return vector
-        return [x / magnitude for x in vector]
+        # if magnitude == 0:
+        #     return vector
+        # return [x / magnitude for x in vector]
 
     # def estimate_tokens(self, text: str) -> int:
     #     """Ước tính số token của text dùng tiktoken.
@@ -224,3 +224,22 @@ def get_embedder() -> Embedder:
             "embedder_initialized", model=_embedder.model, dim=_embedder.dimension
         )
     return _embedder
+
+
+if __name__ == "__main__":
+    import asyncio  
+    
+    data = ["Tôi yêu PTIT", "Tôi đi học", "Team AI TYP", "Hôm nay trời đẹp", "Team AI ITIS"]
+    async def main():
+        embed = Embedder(batch_size = 2)
+        # Phải dùng await để lấy kết quả thực sự từ hàm async
+        # vector = await embed.embed_text("Tôi yêu PTIT")
+        # print("Độ dài vector:", len(vector))
+        # print("5 giá trị đầu tiên:", vector[:5])
+        vector = await embed.embed_batch(data)
+        print(len(vector))
+        print(len(vector[0]))
+        
+    # Chạy hàm main async
+    asyncio.run(main())
+

@@ -196,7 +196,7 @@ class BGEReranker(BaseReranker):
         Args:
             model_name: Model ID. Mặc định ``BAAI/bge-reranker-v2-m3`` từ config.
         """
-        model_name = model_name or settings.bge_reranker_model
+        self.model_name = model_name or settings.bge_reranker_model
         logger.info(f"Đang tải mô hình Reranker cục bộ: {self.model_name}...")
         # Tải mô hình vào RAM/VRAM. 
         # CrossEncoder sẽ tự động nhận diện nếu máy bạn có GPU (CUDA) để tăng tốc
