@@ -16,7 +16,7 @@ from app.core.logging import get_logger
 from app.rag.hybrid_search import SearchResult
 
 import cohere
-from cohere.errors import CohereAPIError
+# from cohere.errors import CohereAPIError
 import asyncio
 from sentence_transformers import CrossEncoder
 
@@ -154,7 +154,7 @@ class CohereReranker(BaseReranker):
 
             return ranked_results
 
-        except CohereAPIError as e:
+        except Exception as e:
             logger.error(f"Lỗi Cohere Rerank API: {e}")
             # Nếu API lỗi (ví dụ hết tiền, nghẽn mạng), thay vì sập app,
             # ta fallback (lùi về) dùng luôn Passthrough (lấy top_n kết quả cũ)

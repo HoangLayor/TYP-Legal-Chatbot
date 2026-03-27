@@ -77,7 +77,7 @@ class Settings(BaseSettings):
     bm25_store_path: str = "./data/bm25_index"
 
     # ── Reranker ─────────────────────────────────────────────
-    reranker_provider: Literal["cohere", "bge", "none"] = "cohere"
+    reranker_provider: Literal["cohere", "bge", "none"] = "bge"
     cohere_api_key: str = Field(default="") # KHÔNG paste key vào đây rồi đẩy lên github
     bge_reranker_model: str = "BAAI/bge-reranker-v2-m3"
     rerank_top_k: int = 20
