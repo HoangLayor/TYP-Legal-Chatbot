@@ -355,17 +355,17 @@ if __name__ == "__main__":
     import pprint
     import os
     chunker = DocumentChunker()
-    documents = chunker.chunk_file(file_path = "/teamspace/studios/this_studio/TYP-Legal-Chatbot/backend/app/rag/data/luat_lao_dong.txt") # kiểu Chunk trong chunker.py
-    dict_documents = [asdict(chunk) for chunk in documents] 
-    # pprint.pprint(dict_documents[0])
-    bm25.fit(documents = dict_documents)
-    # res = bm25.search(query = "Luật lao động là gì", top_k = 5)
-    # pprint.pprint(res[0])
-    bm25.save()
+    # documents = chunker.chunk_file(file_path = "/teamspace/studios/this_studio/TYP-Legal-Chatbot/backend/app/rag/data/luat_lao_dong.txt") # kiểu Chunk trong chunker.py
+    # dict_documents = [asdict(chunk) for chunk in documents] 
+    # # pprint.pprint(dict_documents[0])
+    # bm25.fit(documents = dict_documents)
+    # # res = bm25.search(query = "Luật lao động là gì", top_k = 5)
+    # # pprint.pprint(res[0])
+    # bm25.save()
 
-    '''
+    
     # code để đẩy nhiều file vào cùng lúc
-    data_path = "/teamspace/studios/this_studio/TYP-Legal-Chatbot/backend/app/rag/data"
+    data_path = "/teamspace/studios/this_studio/TYP-Legal-Chatbot/data"
     all_dict_documents = []
     for file in os.listdir(data_path):
         file = os.path.join(data_path, file)
@@ -386,4 +386,4 @@ if __name__ == "__main__":
         # pprint.pprint(res)
     else:
         print("Không có dữ liệu nào để xử lý.")
-    '''
+    

@@ -297,7 +297,7 @@ class QdrantClient(VectorDBClient):
             scroll_filter=Filter(
                 must=[
                     FieldCondition(
-                        key="source_id", # Tên field trong metadata
+                        key="filename", # Tên field trong metadata
                         match=MatchValue(value=doc_id)
                     )
                 ]

@@ -226,7 +226,7 @@ if __name__ == "__main__":
         # Khởi tạo pipeline
         pipeline = RAGPipeline()
         
-        query = "Lương làm thêm giờ vào ban đêm được tính như thế nào?"
+        query = input("Hãy nhập câu hỏi: ")
         print(f"Câu hỏi: {query}\nĐang chạy pipeline, vui lòng đợi vài giây...")
 
         # Chạy luồng non-stream, lấy luôn kết quả cuối cùng
