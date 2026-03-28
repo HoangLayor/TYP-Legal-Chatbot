@@ -14,6 +14,9 @@ from app.core.logging import get_logger
 from app.rag.reranker import RankedResult
 from app.rag.web_search import WebSearchResult
 
+from google import genai
+from google.genai import types
+
 logger = get_logger(__name__)
 settings = get_settings()
 
@@ -56,32 +59,65 @@ class PromptBuilder:
         Returns:
             String dạng ``[{index}] {source} — {text}``.
         """
-        ...
-
-    def _format_history(self, history: list[dict[str, str]]) -> list[dict[str, str]]:
+        # Trích xuất nguồn từ metadata (ưu tiên filename, sau đó đến source nếu có)
+        source = result.metadata.get("filename") or result.metadata.get("source") or "Tài liệu nội bộ"
+        
+        # Nếu có thông tin trang (page), ghép thêm vào để trích dẫn chi tiết hơn
+        page = result.metadata.get("page")
+        if page:
+            source += f" (Trang {page})"
+            
+        clean_text = result.text.strip()
+        return f"[{index}] Nguồn: {source} — {clean_text}"
+    
+    def _format_history(self, history: list[dict[str, str]]) -> list[types.Content]:
         """Cắt history để vừa token limit, giữ lại N messages gần nhất.
 
         Args:
             history: Danh sách messages ``{"role": str, "content": str}``.
 
         Returns:
-            History đã trim, vẫn giữ thứ tự chronological.
+            History đã trim, được convert sang object types.Content chuẩn Gemini, vẫn giữ thứ tự chronological.
         """
-        ...
+        if not history:
+            return []
 
+        max_messages = 10 # 10 tin nhắn ~ 5 lần hỏi - đáp gần nhất
+        
+        # Cắt lấy max_messages cuối cùng
+        trimmed_history = history[-max_messages:]
+
+        # Lịch sử hội thoại PHẢI bắt đầu bằng tin nhắn của "user"
+        if trimmed_history and trimmed_history[0].get("role") in ["assistant", "model"]:
+            trimmed_history = trimmed_history[1:]
+
+        gemini_history: list[types.Content] = []
+        for msg in trimmed_history:
+            role = "model" if msg.get("role") == "assistant" else "user"
+            
+            # Sử dụng object Content và Part thay vì dict thô để fix lỗi type checker
+            gemini_history.append(
+                types.Content(
+                    role=role,
+                    parts=[types.Part.from_text(text=msg.get("content", ""))]
+                )
+            )
+            
+        return gemini_history
+    
     def build_messages(
         self,
         query: str,
         ranked_results: list[RankedResult],
         history: list[dict[str, str]],
         web_results: list[WebSearchResult] | None = None,
-    ) -> list[dict[str, str]]:
-        """Tạo danh sách messages gửi cho LLM.
+    ) -> tuple[str, list[types.Content]]:
+        """Tạo danh sách messages gửi cho LLM (Chuẩn Google Gemini).
 
         Cấu trúc:
-        1. ``system``: System prompt kèm context chunks (+ web nếu có).
-        2. ``user/assistant`` (N-1): Chat history đã trim.
-        3. ``user``: Query hiện tại.
+        1. ``system_instruction``: System prompt kèm context chunks (+ web nếu có).
+        2. ``contents`` (N-1): Chat history đã trim dạng model/user.
+        3. ``contents``: Query hiện tại của user.
 
         Args:
             query: Query mới nhất của user.
@@ -90,18 +126,55 @@ class PromptBuilder:
             web_results: Kết quả Tavily nếu có.
 
         Returns:
-            List dict ``[{"role": str, "content": str}]`` sẵn cho LLM API.
+            Tuple gồm:
+            - system_instruction (str): Câu lệnh hệ thống.
+            - contents (list[types.Content]): Danh sách object chứa parts và role cho LLM API.
         """
-        ...
+        context_parts = []
+        index = 1 
+        
+        # Xử lý tài liệu lấy từ reranker
+        if ranked_results:
+            for result in ranked_results:
+                context_parts.append(self._format_chunk(result, index))
+                index += 1
+                
+        # Xử lý tài liệu từ Internet (nếu có)
+        if web_results:
+            context_parts.append("\n--- KẾT QUẢ TÌM KIẾM INTERNET ---")
+            for web in web_results:
+                clean_content = web.content.strip()
+                context_parts.append(f"Web: {web.title} ({web.url}) — {clean_content}")
+                
+        # Gộp tất cả thành một chuỗi văn bản lớn
+        context_str = "\n".join(context_parts)
+        if not context_str.strip():
+            context_str = "Hệ thống không tìm thấy tài liệu tham khảo nào phù hợp với câu hỏi này."
+            
+        # Lắp ráp System Prompt
+        system_instruction = SYSTEM_PROMPT_TEMPLATE.format(context=context_str)
+        
+        # Nối lịch sử trò chuyện (đã được cắt gọt an toàn và format chuẩn)
+        contents = self._format_history(history)
+        
+        # Thêm câu hỏi hiện tại bằng object types.Content
+        contents.append(
+            types.Content(
+                role="user",
+                parts=[types.Part.from_text(text=query)]
+            )
+        )
+        
+        return system_instruction, contents
 
 
 class Generator:
     """Gọi LLM để sinh câu trả lời, hỗ trợ streaming.
 
-    Hỗ trợ OpenAI và Anthropic (chọn qua ``LLM_PROVIDER``).
+    Hỗ trợ Gemini (chọn qua ``LLM_PROVIDER``).
 
     Attributes:
-        provider (str): ``"openai"`` hoặc ``"anthropic"``.
+        provider (str): Tên provider (hiện tại là "gemini").
         model (str): Tên model LLM.
         prompt_builder (PromptBuilder): Builder tạo messages.
     """
@@ -112,9 +185,13 @@ class Generator:
         Client được chọn dựa trên ``LLM_PROVIDER`` trong config.
         """
         self.provider = settings.llm_provider
-        self.model = settings.openai_model
         self.prompt_builder = PromptBuilder()
-        # TODO: khởi tạo openai.AsyncOpenAI hoặc anthropic.AsyncAnthropic
+        
+        if self.provider == "gemini":
+            self.client = genai.Client(api_key=settings.gemini_api_key) 
+            self.model = settings.gemini_model
+        else:
+            raise ValueError(f"Chưa hỗ trợ provider: {self.provider}")
 
     async def generate_stream(
         self,
@@ -137,9 +214,33 @@ class Generator:
             str: Từng text chunk từ LLM response.
 
         Raises:
-            openai.APIError | anthropic.APIError: Nếu LLM call thất bại.
+            Exception: Nếu LLM call thất bại.
         """
-        ...
+        system_instruction, contents = self.prompt_builder.build_messages(
+            query=query,
+            ranked_results=ranked_results,
+            history=history,
+            web_results=web_results
+        )
+
+        try:
+            response = await self.client.aio.models.generate_content_stream(
+                model=self.model,
+                contents=contents,                                                                  # type: ignore
+                config=types.GenerateContentConfig(
+                    temperature=0.2, # Trả lời pháp lý nghiêm túc
+                    system_instruction=system_instruction
+                )
+            )
+
+            async for chunk in response:
+                if chunk.text:
+                    yield chunk.text
+
+        except Exception as e:
+            logger.error(f"Lỗi API từ Gemini khi generate stream: {e}")
+            yield "\n\n[Hệ thống] Xin lỗi, máy chủ AI đang gặp sự cố. Vui lòng thử lại sau."
+            raise
 
     async def generate(
         self,
@@ -161,13 +262,32 @@ class Generator:
         Returns:
             Toàn bộ response text từ LLM.
         """
-        ...
+        system_instruction, contents = self.prompt_builder.build_messages(
+            query=query, 
+            ranked_results=ranked_results, 
+            history=history, 
+            web_results=web_results
+        )
+
+        try:
+            response = await self.client.aio.models.generate_content(
+                model=self.model,
+                contents=contents,                                                                          # type: ignore
+                config=types.GenerateContentConfig(
+                    temperature=0.2,
+                    system_instruction=system_instruction
+                )
+            )
+            return response.text or ""
+
+        except Exception as e:
+            logger.error(f"Lỗi generate non-stream: {e}")
+            raise
 
 
 # ── Singleton ─────────────────────────────────────────────────────────────────
 
 _generator: Generator | None = None
-
 
 def get_generator() -> Generator:
     """Trả về singleton Generator instance.
@@ -178,5 +298,5 @@ def get_generator() -> Generator:
     global _generator
     if _generator is None:
         _generator = Generator()
-        logger.info("generator_initialized", provider=_generator.provider)
+        logger.info(f"generator_initialized", provider=_generator.provider)
     return _generator
