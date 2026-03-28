@@ -14,7 +14,7 @@ from fastapi.responses import StreamingResponse
 
 from app.core.security import limiter
 from app.models import ChatRequest
-from app.rag.pipeline import RAGPipeline
+from app.rag.pipeline_v0 import RAGPipeline
 
 router = APIRouter(prefix="/chat", tags=["Chat"])
 
@@ -43,7 +43,20 @@ async def _event_stream(
     Yields:
         SSE-formatted string cho mỗi event từ pipeline.
     """
-    ...
+    try:
+        async for event in pipeline.run_stream(
+            session_id=request.session_id,
+            query=request.query,
+            use_web_search=request.use_web_search,
+        ):
+            yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+
+    except Exception as e:
+        error_event = {
+            "type": "error",
+            "message": f"Lỗi khi stream dữ liệu: {str(e)}",
+        }
+        yield f"data: {json.dumps(error_event, ensure_ascii=False)}\n\n"
 
 
 @router.post(
@@ -53,7 +66,7 @@ async def _event_stream(
 )
 @limiter.limit("30/minute")
 async def chat_stream(
-    http_request: Request,
+    request: Request,
     body: ChatRequest,
     pipeline: RAGPipeline = Depends(get_pipeline),
 ) -> StreamingResponse:
@@ -78,4 +91,18 @@ async def chat_stream(
     Returns:
         StreamingResponse với content-type ``text/event-stream``.
     """
-    ...
+    if not body.session_id or not body.session_id.strip():
+        raise HTTPException(status_code=400, detail="session_id không được để trống")
+
+    if not body.query or not body.query.strip():
+        raise HTTPException(status_code=400, detail="query không được để trống")
+
+    return StreamingResponse(
+        _event_stream(pipeline, body),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )

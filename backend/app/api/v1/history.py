@@ -23,7 +23,7 @@ router = APIRouter(prefix="/history", tags=["History"])
 )
 @limiter.limit("60/minute")
 async def get_history(
-    http_request: Request,
+    request: Request,
     session_id: str,
     limit: int = 50,
 ) -> HistoryResponse:
@@ -50,7 +50,7 @@ async def get_history(
 )
 @limiter.limit("20/minute")
 async def delete_history(
-    http_request: Request,
+    request: Request,
     session_id: str,
 ) -> DeleteHistoryResponse:
     """Xoá toàn bộ messages của session từ MongoDB.
