@@ -251,12 +251,13 @@ class QdrantClient(VectorDBClient):
         Returns:
             List ``{"id": str, "score": float, "metadata": dict}``.
         """
-        search_result = await self.client.search(                    #type: ignore
+        # Đã cập nhật sang API mới nhất của Qdrant (query_points)
+        response = await self.client.query_points(
             collection_name=self.collection_name,
-            query_vector=vector,
+            query=vector,          # Chú ý: Tên tham số đổi từ query_vector thành query
             limit=top_k,
-            query_filter=filter,
-            with_payload=True, # Bắt buộc True để lấy lại được metadata (text)
+            query_filter=filter,                     # type: ignore
+            with_payload=True, 
         )
 
         # Chuyển đổi định dạng kết quả của Qdrant về chuẩn chung của Interface
@@ -266,7 +267,7 @@ class QdrantClient(VectorDBClient):
                 "score": hit.score,
                 "metadata": hit.payload or {}
             }
-            for hit in search_result
+            for hit in response.points  # Kết quả giờ được bọc bên trong thuộc tính .points
         ]
         return results
 
