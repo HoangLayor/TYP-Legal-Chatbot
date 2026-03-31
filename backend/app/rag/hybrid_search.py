@@ -234,7 +234,7 @@ class HybridSearcher:
             
             merged_docs[doc_id] = {
                 "score": rrf_score,
-                "text": res["text"],
+                "text": res.get("metadata", {}).get("text", ""),
                 "metadata": res.get("metadata", {}),
                 "dense_rank": rank,
                 "sparse_rank": None  # Khởi tạo mặc định là None vì chưa biết BM25 có tìm thấy không
@@ -328,3 +328,14 @@ class HybridSearcher:
         
         logger.info(f"Hybrid Search hoàn tất. Trả về {len(final_results)} tài liệu.")
         return final_results
+
+
+if __name__ == "__main__":
+    import asyncio
+    import pprint
+    async def main():
+        searcher = HybridSearcher()
+        # tmp = await searcher._dense_search(query = "Luật lao động là gì?", top_k = 3)
+        tmp = searcher._sparse_search(query = "Luật lao động là gì?", top_k = 3)
+        pprint.pprint(tmp[0])
+    asyncio.run(main())
