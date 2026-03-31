@@ -24,7 +24,7 @@ router = APIRouter(prefix="/search", tags=["Search (Debug)"])
 )
 @limiter.limit("30/minute")
 async def search(
-    http_request: Request,
+    request: Request,
     q: str = Query(..., min_length=1, description="Query string"),
     top_k: int = Query(10, ge=1, le=50, description="Số kết quả trả về"),
     use_rerank: bool = Query(True, description="Có chạy reranker không"),

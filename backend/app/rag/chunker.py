@@ -293,4 +293,4 @@ class DocumentChunker:
 if __name__ == "__main__":
     import pprint
     documentchunker = DocumentChunker()
-    pprint.pprint(documentchunker.chunk_file(file_path = "/teamspace/studios/this_studio/TYP-Legal-Chatbot/backend/app/rag/data/luat_lao_dong.txt")[0])
+    pprint.pprint(documentchunker.chunk_file(file_path = "D:\\TYP-Legal-Chatbot\\backend\\app\\rag\\data\\luat_lao_dong.txt")[0])
