@@ -84,6 +84,7 @@ class PromptBuilder:
 
         max_messages = 10 # 10 tin nhắn ~ 5 lần hỏi - đáp gần nhất
         
+
         # Cắt lấy max_messages cuối cùng
         trimmed_history = history[-max_messages:]
 

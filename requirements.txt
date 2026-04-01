@@ -19,3 +19,8 @@ cohere
 google-generativeai
 openai
 qdrant-client
+streamlit
+
+# đánh giá hệ thống RAG sử dụng RAGAs
+ragas
+llama-index

@@ -216,7 +216,7 @@ class QdrantClient(VectorDBClient):
         if not vectors:
             return {"upserted_count": 0}
 
-        # Qdrant sử dụng khái niệm PointStruct để lưu trữ 1 vector
+        # Qdrant sử dụng khái niệm PointStruct để lưu trữ 1 vector 
         points = [
             PointStruct(
                 id=v["id"],               # ID của chunk (chuỗi UUID hoặc số nguyên)

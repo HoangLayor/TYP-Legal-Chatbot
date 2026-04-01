@@ -86,10 +86,10 @@ Thumbs.db
 .dockerignore
 
 # ── Data & Indexes ────────────────────────────────────────────
-# data/
-# *.pkl
-# *.pickle
-# backend/data/
+data/
+*.pkl
+*.pickle
+backend/data/
 
 # ── Logs ─────────────────────────────────────────────────────
 *.log
