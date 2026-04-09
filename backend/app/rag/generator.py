@@ -29,7 +29,7 @@ Nếu thông tin không có trong tài liệu, hãy thành thật nói rõ.
 Trả lời bằng tiếng Việt, ngắn gọn, chính xác và có trích dẫn nguồn.
 
 --- TÀI LIỆU THAM KHẢO ---
-{context}
+{context}  
 --- KẾT THÚC TÀI LIỆU ---
 """
 

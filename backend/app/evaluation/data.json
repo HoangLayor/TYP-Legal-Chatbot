@@ -1,0 +1,26 @@
+{
+    "question": [
+        "Bộ luật Lao động số 45/2019/QH14 áp dụng cho những đối tượng nào?",
+        "Theo quy định chung, độ tuổi lao động tối thiểu của người lao động là bao nhiêu?",
+        "Hợp đồng lao động phải được giao kết theo những loại hợp đồng nào?",
+        "Người sử dụng lao động không được thực hiện những hành vi nào khi giao kết và thực hiện hợp đồng lao động?",
+        "Thời gian thử việc tối đa đối với công việc yêu cầu trình độ chuyên môn, kỹ thuật từ cao đẳng trở lên là bao lâu?",
+        "Người lao động có quyền đơn phương chấm dứt hợp đồng lao động không cần báo trước trong những trường hợp cụ thể nào?",
+        "Khi đơn phương chấm dứt hợp đồng lao động trái pháp luật, người lao động phải thực hiện những nghĩa vụ gì?",
+        "Việc tính thời gian làm việc và tiền lương để chi trả trợ cấp mất việc làm được pháp luật quy định như thế nào?",
+        "Bên thuê lại lao động bị cấm sử dụng lao động thuê lại trong những trường hợp nào?",
+        "Thỏa ước lao động tập thể doanh nghiệp chỉ được ký kết hợp pháp khi đáp ứng điều kiện gì về tỷ lệ lấy ý kiến?"
+    ],
+    "ground_truth": [
+        "Đối tượng áp dụng bao gồm: Người lao động, người học nghề, người tập nghề và người làm việc không có quan hệ lao động; Người sử dụng lao động; Người lao động nước ngoài làm việc tại Việt Nam; Cơ quan, tổ chức, cá nhân khác có liên quan trực tiếp đến quan hệ lao động (Căn cứ Điều 2).",
+        "Độ tuổi lao động tối thiểu của người lao động là đủ 15 tuổi, trừ trường hợp đặc biệt được quy định tại Mục 1 Chương XI của Bộ luật này (Căn cứ Khoản 1 Điều 3).",
+        "Hợp đồng lao động phải được giao kết theo một trong hai loại: Hợp đồng lao động không xác định thời hạn và Hợp đồng lao động xác định thời hạn có thời hạn không quá 36 tháng (Căn cứ Khoản 1 Điều 20).",
+        "Người sử dụng lao động không được: 1. Giữ bản chính giấy tờ tùy thân, văn bằng, chứng chỉ của người lao động; 2. Yêu cầu người lao động phải thực hiện biện pháp bảo đảm bằng tiền hoặc tài sản khác; 3. Buộc người lao động thực hiện hợp đồng lao động để trả nợ cho người sử dụng lao động (Căn cứ Điều 17).",
+        "Thời gian thử việc đối với công việc có chức danh nghề nghiệp cần trình độ chuyên môn, kỹ thuật từ cao đẳng trở lên là không quá 60 ngày (Căn cứ Khoản 2 Điều 25).",
+        "Người lao động được đơn phương chấm dứt hợp đồng không cần báo trước nếu: Không được bố trí đúng công việc, địa điểm, điều kiện làm việc; Không được trả đủ lương hoặc đúng hạn; Bị ngược đãi, đánh đập, nhục mạ, cưỡng bức lao động, quấy rối tình dục; Lao động nữ mang thai phải nghỉ việc theo quy định; Đủ tuổi nghỉ hưu; NSDLĐ cung cấp thông tin không trung thực làm ảnh hưởng việc thực hiện hợp đồng (Căn cứ Khoản 2 Điều 35).",
+        "Người lao động phải: 1. Không được trợ cấp thôi việc; 2. Phải bồi thường nửa tháng tiền lương theo hợp đồng và một khoản tiền tương ứng với tiền lương trong những ngày không báo trước; 3. Phải hoàn trả cho người sử dụng lao động chi phí đào tạo nếu có (Căn cứ Điều 40).",
+        "Thời gian làm việc để tính trợ cấp là tổng thời gian làm việc thực tế trừ đi thời gian đã tham gia bảo hiểm thất nghiệp và thời gian đã được chi trả trợ cấp thôi việc hoặc mất việc làm. Tiền lương để tính trợ cấp là tiền lương bình quân của 06 tháng liền kề theo hợp đồng lao động trước khi mất việc làm (Căn cứ Khoản 2 và Khoản 3 Điều 47).",
+        "Bên thuê lại lao động không được sử dụng lao động thuê lại để: 1. Thay thế người lao động đang đình công, giải quyết tranh chấp lao động; 2. Khi không có thỏa thuận cụ thể về trách nhiệm bồi thường tai nạn lao động, bệnh nghề nghiệp với doanh nghiệp cho thuê; 3. Thay thế người lao động bị thôi việc do thay đổi cơ cấu, công nghệ, lý do kinh tế hoặc chia, tách, sáp nhập (Căn cứ Khoản 3 Điều 53).",
+        "Thỏa ước lao động tập thể doanh nghiệp chỉ được ký kết khi có trên 50% người lao động của doanh nghiệp đó biểu quyết tán thành sau khi dự thảo thỏa ước đã được lấy ý kiến của toàn bộ người lao động (Căn cứ Khoản 1 Điều 76)."
+    ]
+}
