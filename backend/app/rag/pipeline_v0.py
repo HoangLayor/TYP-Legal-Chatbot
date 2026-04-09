@@ -129,8 +129,8 @@ class RAGPipeline:
         """Chạy toàn bộ pipeline và yield SSE events."""
         try:
             # 1. Load lịch sử trò chuyện
-            # history = await self.history_manager.get_session_history(session_id)
-            history = []
+            history = await self.history_manager.load_history(session_id)
+            
             
             # 2. Viết lại câu hỏi
             actual_query = await self._rewrite_query(query, history)
@@ -161,8 +161,8 @@ class RAGPipeline:
                 yield {"type": "chunk", "content": chunk_text}
                 
             # 7. Lưu lại lịch sử vào MongoDB
-            # await self.history_manager.add_message(session_id, role="user", content=query)
-            # await self.history_manager.add_message(session_id, role="assistant", content=full_answer)
+            await self.history_manager.add_message(session_id, role="user", content=query)
+            await self.history_manager.add_message(session_id, role="assistant", content=full_answer)
             
             # 8. Đóng gói Nguồn (Sources) trả về ở cuối cùng
             sources = await self._build_sources(ranked_docs, web_results)
@@ -184,7 +184,11 @@ class RAGPipeline:
         """Chạy pipeline không streaming, trả về kết quả đầy đủ."""
         # 1 & 2. Lịch sử và Viết lại câu hỏi
         # history = await self.history_manager.get_session_history(session_id)
-        history = []
+        history = await self.history_manager.load_history(session_id)
+
+        print(f"History loaded for session {session_id}: {len(history)} messages")
+
+
         actual_query = await self._rewrite_query(query, history)
         
         # 3 & 4. Retrieve và Rerank
@@ -204,10 +208,10 @@ class RAGPipeline:
             history=history,
             web_results=web_results
         )
-        
+        print(f"Answer: ----------------------------------------------------------")
         # 7. Lưu lịch sử
-        # await self.history_manager.add_message(session_id, role="user", content=query)
-        # await self.history_manager.add_message(session_id, role="assistant", content=answer)
+        await self.history_manager.save_message(session_id, role="user", content=query)
+        await self.history_manager.save_message(session_id, role="assistant", content=answer)
         
         # 8. Đóng gói kết quả
         sources = await self._build_sources(ranked_docs, web_results)
