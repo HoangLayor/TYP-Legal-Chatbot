@@ -1,0 +1,132 @@
+.livechat-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.4);
+  animation: overlayFadeIn 0.3s ease both;
+}
+
+.livechat-popup {
+  display: flex;
+  width: min(480px, 100%);
+  height: 320px;
+  flex-direction: column;
+  align-items: center;
+  padding: 18px 22px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 28px;
+  background: linear-gradient(160deg, #1e1b4b, #0f2027);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.42);
+  color: #ffffff;
+}
+
+.livechat-header {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.livechat-header div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+}
+
+.livechat-header button {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.livechat-avatar {
+  display: flex;
+  width: 80px;
+  height: 80px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 18px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  box-shadow: 0 0 28px rgba(99, 102, 241, 0.38);
+}
+
+.livechat-avatar.active {
+  animation: pulseRing 1.4s ease-out infinite;
+}
+
+.livechat-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.livechat-status span {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: #22c55e;
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.6);
+}
+
+.livechat-status.answering span {
+  background: #a855f7;
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.65);
+}
+
+.livechat-transcript {
+  width: 100%;
+  max-height: 80px;
+  min-height: 50px;
+  overflow-y: auto;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(255, 255, 255, 0.88);
+  line-height: 1.45;
+  text-align: center;
+}
+
+.hold-talk-button {
+  min-height: 42px;
+  margin-top: 14px;
+  padding: 0 22px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #6366f1, #3b82f6);
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.hold-talk-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.end-session-button {
+  margin-top: 8px;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 0.82rem;
+}
+
+.end-session-button:hover {
+  color: #fecaca;
+}

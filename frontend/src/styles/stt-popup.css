@@ -1,0 +1,113 @@
+.stt-popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 85;
+  width: min(340px, calc(100vw - 28px));
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 24px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.95), rgba(59, 130, 246, 0.95));
+  box-shadow: 0 24px 70px rgba(59, 130, 246, 0.32);
+  color: #ffffff;
+  animation: scaleIn 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.stt-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.stt-visualizer {
+  display: flex;
+  min-height: 58px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin: 18px 0;
+}
+
+.stt-visualizer span {
+  width: 8px;
+  height: 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  animation: barBounce 1s ease-in-out infinite;
+}
+
+.stt-visualizer span:nth-child(2) {
+  animation-delay: 0.08s;
+}
+
+.stt-visualizer span:nth-child(3) {
+  animation-delay: 0.16s;
+}
+
+.stt-visualizer span:nth-child(4) {
+  animation-delay: 0.24s;
+}
+
+.stt-visualizer span:nth-child(5) {
+  animation-delay: 0.32s;
+}
+
+.stt-visualizer span:nth-child(6) {
+  animation-delay: 0.4s;
+}
+
+.stt-visualizer span:nth-child(7) {
+  animation-delay: 0.48s;
+}
+
+.stt-transcript {
+  width: 100%;
+  min-height: 68px;
+  max-height: 92px;
+  padding: 0;
+  resize: none;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #ffffff;
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.stt-transcript::selection {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.stt-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.stt-actions button {
+  min-height: 38px;
+  flex: 1;
+  border: 0;
+  border-radius: 999px;
+  font-weight: 800;
+}
+
+.stt-cancel {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+.stt-use {
+  background: #ffffff;
+  color: #6366f1;
+}
+
+.stt-use:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}

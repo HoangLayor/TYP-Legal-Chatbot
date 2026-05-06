@@ -1,0 +1,42 @@
+:root {
+  color-scheme: light;
+  --primary-gradient: linear-gradient(135deg, #6366f1, #3b82f6, #06b6d4);
+  --sidebar-dark-gradient: linear-gradient(180deg, #1e1b4b, #1e3a5f, #0f2027);
+  --button-gradient: linear-gradient(135deg, #6366f1, #3b82f6);
+  --user-gradient: linear-gradient(135deg, #6366f1, #2563eb);
+  --user-avatar-gradient: linear-gradient(135deg, #f97316, #ec4899);
+  --accent: #6366f1;
+  --accent-glow: 0 0 20px rgba(99, 102, 241, 0.4);
+  --danger-bg: rgba(248, 113, 113, 0.14);
+  --danger-border: rgba(248, 113, 113, 0.36);
+  --danger-text: #fecaca;
+}
+
+:root[data-theme="light"] {
+  --bg-main: #f8faff;
+  --bg-sidebar: linear-gradient(180deg, #eef2ff, #e0e7ff);
+  --text-primary: #1e1b4b;
+  --text-secondary: #6b7280;
+  --border: rgba(99, 102, 241, 0.15);
+  --card-bg: rgba(255, 255, 255, 0.8);
+  --card-strong: rgba(255, 255, 255, 0.94);
+  --surface-muted: rgba(99, 102, 241, 0.08);
+  --conversation-hover: rgba(0, 0, 0, 0.06);
+  --shadow-soft: 0 24px 70px rgba(79, 70, 229, 0.14);
+  --shadow-card: 0 18px 42px rgba(30, 27, 75, 0.1);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg-main: #0d0f1a;
+  --bg-sidebar: linear-gradient(180deg, #1e1b4b, #0f172a);
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --border: rgba(99, 102, 241, 0.2);
+  --card-bg: rgba(30, 27, 75, 0.6);
+  --card-strong: rgba(17, 24, 39, 0.78);
+  --surface-muted: rgba(99, 102, 241, 0.12);
+  --conversation-hover: rgba(255, 255, 255, 0.06);
+  --shadow-soft: 0 24px 80px rgba(0, 0, 0, 0.34);
+  --shadow-card: 0 18px 46px rgba(0, 0, 0, 0.26);
+}
